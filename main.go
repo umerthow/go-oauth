@@ -7,11 +7,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	_ "github.com/joho/godotenv/autoload" // for development
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"github.com/umerthow/go-oauth/channel"
 	"github.com/umerthow/go-oauth/config"
+	"github.com/umerthow/go-oauth/middleware"
 	"github.com/umerthow/go-oauth/mongodb"
 	"github.com/umerthow/go-oauth/response"
 	"github.com/umerthow/go-oauth/server"
@@ -31,13 +34,20 @@ func main() {
 	logger.SetFormatter(cfg.Logger.Formatter)
 	logger.SetReportCaller(true)
 
+	// set validator
+	vld := validator.New()
+
 	// set mongodb
 	mca := mongodb.NewClientAdapter(cfg.Mongodb.ClientOptions)
 	if err := mca.Connect(context.Background()); err != nil {
 		logger.Fatal(err)
 	}
 
-	// channelDB := mca.Database(cfg.Mongodb.Database)
+	channelDB := mca.Database(cfg.Mongodb.Database)
+
+	// Basic Auth Initialze Middleware
+	// set basic auth middleware
+	basicAuthMiddleware := middleware.NewBasicAuth(cfg.BasicAuth.Username, cfg.BasicAuth.Password)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/go-oauth", index)
@@ -49,6 +59,18 @@ func main() {
 		AllowedHeaders:   []string{"Origin", "Accept", "Content-Type", "X-Requested-With", "Authorization"},
 		AllowCredentials: true,
 	}).Handler(router)
+
+	// Channels
+	channelRepository := channel.NewChannelRepository(logger, channelDB)
+	channelUsecase := channel.NewChannelUsecase(channel.UsecaseChannelProperty{
+		ServiceName:        cfg.Application.Name,
+		Logger:             logger,
+		ChannelsRepository: channelRepository,
+		Location:           cfg.Application.Location,
+	})
+
+	// Routes Handler
+	channel.NewChannelHTTPHandler(logger, vld, router, basicAuthMiddleware, channelUsecase)
 
 	// initiate server
 	srv := server.NewServer(logger, handler, cfg.Application.Port)

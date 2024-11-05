@@ -26,11 +26,16 @@ type Config struct {
 		ClientOptions *options.ClientOptions
 		Database      string
 	}
+	BasicAuth struct {
+		Username string
+		Password string
+	}
 }
 
 func Load() *Config {
 	cfg := new(Config)
 	cfg.app()
+	cfg.basicAuth()
 	cfg.logFormatter()
 	cfg.mongodb()
 
@@ -59,6 +64,14 @@ func (cfg *Config) app() {
 	cfg.Application.Name = appName
 	cfg.Application.AllowedOrigins = allowedOrigins
 	cfg.Application.Location = loc
+}
+
+func (cfg *Config) basicAuth() {
+	username := os.Getenv("BASIC_AUTH_USERNAME")
+	password := os.Getenv("BASIC_AUTH_PASSWORD")
+
+	cfg.BasicAuth.Username = username
+	cfg.BasicAuth.Password = password
 }
 
 func (cfg *Config) logFormatter() {
