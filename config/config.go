@@ -38,10 +38,11 @@ func Load() *Config {
 }
 
 func (cfg *Config) app() {
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	timezone := os.Getenv("TIMEZONE")
+	loc, _ := time.LoadLocation("Asia/Jakarta") // default timezone
 	appName := os.Getenv("APP_NAME")
 	port := os.Getenv("PORT")
-	timezone := os.Getenv("TIMEZONE")
+
 	if l, err := time.LoadLocation(timezone); err == nil {
 		loc = l
 	}
