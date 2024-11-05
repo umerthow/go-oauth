@@ -3,8 +3,10 @@ package mongodb
 import (
 	"context"
 
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 // ClientAdapter is a concrete struct of mongodb client adapter.
@@ -32,7 +34,8 @@ func (c *ClientAdapter) Connect(ctx context.Context) (err error) {
 	}
 
 	// Optional: Ping the server to verify the connection
-	if err = c.client.Ping(ctx, nil); err != nil {
+	if err = c.client.Ping(ctx, readpref.Primary()); err != nil {
+		logrus.Printf("an error ocurred when connect to mongoDB : %v", err)
 		return err
 	}
 	return

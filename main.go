@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,6 +12,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/umerthow/go-oauth/config"
+	"github.com/umerthow/go-oauth/mongodb"
 	"github.com/umerthow/go-oauth/response"
 	"github.com/umerthow/go-oauth/server"
 )
@@ -28,6 +30,14 @@ func main() {
 	logger := logrus.New()
 	logger.SetFormatter(cfg.Logger.Formatter)
 	logger.SetReportCaller(true)
+
+	// set mongodb
+	mca := mongodb.NewClientAdapter(cfg.Mongodb.ClientOptions)
+	if err := mca.Connect(context.Background()); err != nil {
+		logger.Fatal(err)
+	}
+
+	// channelDB := mca.Database(cfg.Mongodb.Database)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/go-oauth", index)
@@ -50,6 +60,8 @@ func main() {
 
 	// closing service for a gracefull shutdown.
 	srv.Close()
+	mca.Disconnect(context.Background())
+
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
