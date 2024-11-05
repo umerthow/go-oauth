@@ -1,5 +1,14 @@
 package main
 
+import (
+	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+	"github.com/umerthow/go-oauth/config"
+	"github.com/umerthow/go-oauth/response"
+)
+
 var (
 	cfg          *config.Config
 	indexMessage string = "Application is running properly"
@@ -15,8 +24,7 @@ func main() {
 	logger.SetReportCaller(true)
 
 	router := mux.NewRouter()
-	fmt.
-		router.HandleFunc("/go-oauth", index)
+	router.HandleFunc("/go-oauth", index)
 }
 
 func index(w http.ResponseWriter, r *http.Request) {

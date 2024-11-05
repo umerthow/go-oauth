@@ -1,6 +1,16 @@
 package config
 
-import "time"
+import (
+	"fmt"
+	"os"
+	"runtime"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
 
 type Config struct {
 	Application struct {
@@ -23,6 +33,8 @@ func Load() *Config {
 	cfg.app()
 	cfg.logFormatter()
 	cfg.mongodb()
+
+	return cfg
 }
 
 func (cfg *Config) app() {
@@ -75,8 +87,7 @@ func (cfg *Config) mongodb() {
 		SetAppName(appName).
 		SetMinPoolSize(minPoolSize).
 		SetMaxPoolSize(maxPoolSize).
-		SetMaxConnIdleTime(time.Millisecond * time.Duration(maxConnIdleTime)).
-		SetMonitor(apmmongo.CommandMonitor())
+		SetMaxConnIdleTime(time.Millisecond * time.Duration(maxConnIdleTime))
 
 	cfg.Mongodb.ClientOptions = opts
 	cfg.Mongodb.Database = db
