@@ -3,8 +3,8 @@ package entity
 import "time"
 
 type Channel struct {
-	ID          string    `json:"id" bson:"id"`
-	Name        int       `json:"name" bson:"name"`
+	UserID      string    `json:"id" bson:"id"`
+	Name        string    `json:"name" bson:"name"`
 	ClientId    string    `json:"client_id" bson:"client_id"`
 	ClientType  string    `json:"client_type" bson:"client_type"`
 	IsActive    bool      `json:"is_active" bson:"is_active"`
