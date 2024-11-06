@@ -1,11 +1,13 @@
 package model
 
+import "github.com/umerthow/go-oauth/entity"
+
 type RequestChannel struct {
-	Name        string   `json:"name" validate:"required"`
-	ClientType  string   `json:"clientType" validate:"oneof=public confidential"`
-	GrantTypes  []string `json:"grantTypes" validate:"required"`
-	Scopes      []string `json:"scopes" validate:"required"`
-	RedirectURI string   `json:"redirectUri" validate:"required"`
+	Name        string             `json:"name" validate:"required"`
+	ClientType  string             `json:"clientType" validate:"oneof=public confidential"`
+	GrantTypes  []entity.GrantType `json:"grantTypes" validate:"required"`
+	Scopes      []string           `json:"scopes" validate:"required"`
+	RedirectURI string             `json:"redirectUri" validate:"required"`
 }
 
 type ClientInfo interface {

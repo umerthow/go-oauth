@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -27,6 +28,7 @@ func NewOauthHTTPHandler(logger *logrus.Logger, validate *validator.Validate, ro
 	}
 
 	router.HandleFunc("/go-oauth/v1/token", middleware.Verify(handler.TokenRequest)).Methods(http.MethodPost)
+	router.HandleFunc("/go-oauth/v1/token-verification", handler.TokenVerification).Methods(http.MethodGet)
 }
 
 func (handler *HTTPHandler) TokenRequest(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +51,30 @@ func (handler *HTTPHandler) TokenRequest(w http.ResponseWriter, r *http.Request)
 
 	resp = handler.Usecase.RequestToken(ctx, payload)
 	response.JSON(w, resp)
+}
+
+func (handler *HTTPHandler) TokenVerification(w http.ResponseWriter, r *http.Request) {
+	var resp response.Response
+	queryString := r.URL.Query()
+	ctx := r.Context()
+
+	clientId := queryString.Get("clientId")
+	token := queryString.Get("token")
+
+	tokenVerify := model.TokenVerify{
+		ClientId: clientId,
+		Token:    token,
+	}
+	if tokenVerify.ClientId == "" || tokenVerify.Token == "" {
+		err := errors.New("clientId or token can't be empty")
+		resp = response.NewErrorResponse(err, http.StatusBadRequest, nil, response.StatusInvalidParameter, err.Error())
+		response.JSON(w, resp)
+		return
+	}
+
+	resp = handler.Usecase.VerifyToken(ctx, tokenVerify)
+	response.JSON(w, resp)
+
 }
 
 func (handler *HTTPHandler) validateRequestBody(body interface{}) (err error) {

@@ -3,14 +3,16 @@ package oauth
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"strings"
-	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/umerthow/go-oauth/entity"
 	err "github.com/umerthow/go-oauth/errors"
+)
+
+const (
+	issuer = "https://oauth.github.com"
 )
 
 // JWTAccessClaims jwt claims
@@ -21,14 +23,6 @@ type JWTAccessClaims struct {
 	Scopes    []string `json:"scopes"`
 	XDeviceId string   `json:"deviceId"`
 	jwt.StandardClaims
-}
-
-// Valid claims verification
-func (a *JWTAccessClaims) Valid() error {
-	if time.Unix(a.ExpiresAt, 0).Before(time.Now()) {
-		return err.ErrInvalidAccessToken
-	}
-	return nil
 }
 
 // NewJWTAccessGenerate create to generate the jwt access token instance
@@ -49,8 +43,6 @@ type JWTAccessGenerate struct {
 
 // Token based on the UUID generated token
 func (a *JWTAccessGenerate) Token(ctx context.Context, data *entity.GenerateBasic, isGenRefresh bool) (string, string, error) {
-	tokenExpiryIn := time.Second * 300
-
 	claims := &JWTAccessClaims{
 		ClientId:  data.ClientId,
 		Scopes:    data.Scopes,
@@ -59,10 +51,10 @@ func (a *JWTAccessGenerate) Token(ctx context.Context, data *entity.GenerateBasi
 		XDeviceId: data.XDeviceId,
 		StandardClaims: jwt.StandardClaims{
 			Audience:  data.Domain,
-			Issuer:    "https://oauth.github.com",
+			Issuer:    issuer,
 			IssuedAt:  data.TokenInfo.GetAccessCreateAt().Unix(),
 			Subject:   data.ID,
-			ExpiresAt: data.TokenInfo.GetAccessCreateAt().Add(tokenExpiryIn).Unix(),
+			ExpiresAt: data.TokenInfo.GetAccessCreateAt().Add(data.TokenInfo.GetAccessExpiresIn()).Unix(),
 		},
 	}
 
@@ -70,32 +62,8 @@ func (a *JWTAccessGenerate) Token(ctx context.Context, data *entity.GenerateBasi
 	if a.SignedKeyID != "" {
 		token.Header["kid"] = a.SignedKeyID
 	}
-	var key interface{}
-	if a.isEs() {
-		v, err := jwt.ParseECPrivateKeyFromPEM(a.SignedKey)
-		if err != nil {
-			return "", "", err
-		}
-		key = v
-	} else if a.isRsOrPS() {
-		v, err := jwt.ParseRSAPrivateKeyFromPEM(a.SignedKey)
-		if err != nil {
-			return "", "", err
-		}
-		key = v
-	} else if a.isHs() {
-		key = a.SignedKey
-	} else if a.isEd() {
-		v, err := jwt.ParseEdPrivateKeyFromPEM(a.SignedKey)
-		if err != nil {
-			return "", "", err
-		}
-		key = v
-	} else {
-		return "", "", errors.New("unsupported sign method")
-	}
 
-	access, err := token.SignedString(key)
+	access, err := token.SignedString(a.SignedKey)
 	if err != nil {
 		return "", "", err
 	}
@@ -110,20 +78,47 @@ func (a *JWTAccessGenerate) Token(ctx context.Context, data *entity.GenerateBasi
 	return access, refresh, nil
 }
 
-func (a *JWTAccessGenerate) isEs() bool {
-	return strings.HasPrefix(a.SignedMethod.Alg(), "ES")
-}
+func (a *JWTAccessGenerate) Verify(ctx context.Context, accessToken string) (*JWTAccessClaims, error) {
+	token, errParse := jwt.ParseWithClaims(accessToken, &JWTAccessClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(a.SignedKey), nil
+	})
 
-func (a *JWTAccessGenerate) isRsOrPS() bool {
-	isRs := strings.HasPrefix(a.SignedMethod.Alg(), "RS")
-	isPs := strings.HasPrefix(a.SignedMethod.Alg(), "PS")
-	return isRs || isPs
-}
+	if token.Method != a.SignedMethod {
+		return nil, err.ErrInvalidAccessToken
+	}
 
-func (a *JWTAccessGenerate) isHs() bool {
-	return strings.HasPrefix(a.SignedMethod.Alg(), "HS")
-}
+	if errParse != nil {
+		if validationErr, ok := errParse.(*jwt.ValidationError); ok {
+			if validationErr.Errors&jwt.ValidationErrorExpired != 0 {
+				return nil, err.ErrExpiredAccessToken
+			}
+			// Check for invalid issuer
+			if validationErr.Errors&jwt.ValidationErrorIssuer != 0 {
+				return nil, err.ErrValidationIssuer
+			}
+			// Check for invalid signature
+			if validationErr.Errors&jwt.ValidationErrorSignatureInvalid != 0 {
+				return nil, err.ErrInvalidSignature
+			}
+			// Check for malformed token
+			if validationErr.Errors&jwt.ValidationErrorMalformed != 0 {
+				return nil, err.ErrTokenMalformed
+			}
 
-func (a *JWTAccessGenerate) isEd() bool {
-	return strings.HasPrefix(a.SignedMethod.Alg(), "Ed")
+			return nil, err.ErrInvalidAccessToken
+		} else {
+			return nil, errParse
+		}
+	}
+
+	// Check if the token claims are valid and the token itself is valid
+	if claims, ok := token.Claims.(*JWTAccessClaims); ok && token.Valid {
+		if claims.Issuer != issuer {
+			return nil, err.ErrValidationIssuer
+		}
+
+		return claims, nil
+	} else {
+		return nil, err.ErrInvalidAccessToken
+	}
 }

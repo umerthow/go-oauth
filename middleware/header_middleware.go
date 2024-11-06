@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/umerthow/go-oauth/entity"
 	"github.com/umerthow/go-oauth/exception"
 	"github.com/umerthow/go-oauth/response"

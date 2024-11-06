@@ -5,16 +5,16 @@ import (
 )
 
 type GenerateBasic struct {
-	ID         string    `json:"id"`
-	ClientId   string    `json:"clientId"`
-	ClientType string    `json:"clientType"`
-	IsActive   bool      `json:"isActive"`
-	IsPublic   bool      `json:"isPublic"`
-	GrantTypes []string  `json:"grantTypes"`
-	Scopes     []string  `json:"scopes"`
-	XDeviceId  string    `json:"deviceId"`
-	Domain     string    `json:"domain"`
-	CreateAt   time.Time `json:"createdAt"`
+	ID         string      `json:"id"`
+	ClientId   string      `json:"clientId"`
+	ClientType string      `json:"clientType"`
+	IsActive   bool        `json:"isActive"`
+	IsPublic   bool        `json:"isPublic"`
+	GrantTypes []GrantType `json:"grantTypes"`
+	Scopes     []string    `json:"scopes"`
+	XDeviceId  string      `json:"deviceId"`
+	Domain     string      `json:"domain"`
+	CreateAt   time.Time   `json:"createdAt"`
 	TokenInfo  TokenInfo
 }
 
@@ -37,4 +37,9 @@ func (t *TokenInfo) GetAccessCreateAt() time.Time {
 // GetAccessExpiresIn the lifetime in seconds of the access token
 func (t *TokenInfo) GetAccessExpiresIn() time.Duration {
 	return t.AccessExpiresIn
+}
+
+// GetAccessExpiresAt the lifetime in date of the access token
+func (t *TokenInfo) GetAccessExpiresAt() time.Time {
+	return t.AccessExpiresAt
 }

@@ -10,6 +10,7 @@ const (
 	StatusInvalidPayload   string = "INVALID_PAYLOAD"
 	StatusInvalidParameter string = "INVALID_PARAMETER"
 	StatUnauthorized       string = "UNAUTHORIZED"
+	StatTokenExpired       string = "EXPIRED"
 	StatAlreadyExist       string = "ALREADY_EXIST"
 	StatBadRequest         string = "BAD_REQUEST"
 	StatForbidden          string = "FORBIDDEN"
