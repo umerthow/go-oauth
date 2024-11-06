@@ -6,7 +6,7 @@ type TokenRequest struct {
 	GrantTypes   string `json:"grantTypes" validate:"required"`
 }
 
-type TokenClaim struct {
+type TokenClaimResponse struct {
 	Token        string `json:"token"`
-	RefreshToken string `json:"refreshToken"`
+	RefreshToken string `json:"refreshToken,omitempty"`
 }

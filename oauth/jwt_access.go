@@ -15,6 +15,11 @@ import (
 
 // JWTAccessClaims jwt claims
 type JWTAccessClaims struct {
+	ClientId  string   `json:"clientId"`
+	IsActive  bool     `json:"isActive"`
+	IsPublic  bool     `json:"isPublic"`
+	Scopes    []string `json:"scopes"`
+	XDeviceId string   `json:"deviceId"`
 	jwt.StandardClaims
 }
 
@@ -47,10 +52,16 @@ func (a *JWTAccessGenerate) Token(ctx context.Context, data *entity.GenerateBasi
 	tokenExpiryIn := time.Second * 300
 
 	claims := &JWTAccessClaims{
+		ClientId:  data.ClientId,
+		Scopes:    data.Scopes,
+		IsPublic:  data.IsPublic,
+		IsActive:  data.IsActive,
+		XDeviceId: data.XDeviceId,
 		StandardClaims: jwt.StandardClaims{
-			Audience:  "https://api.github.com",
-			Issuer:    "https://github.com",
-			Subject:   data.UserID,
+			Audience:  data.Domain,
+			Issuer:    "https://oauth.github.com",
+			IssuedAt:  data.TokenInfo.GetAccessCreateAt().Unix(),
+			Subject:   data.ID,
 			ExpiresAt: data.TokenInfo.GetAccessCreateAt().Add(tokenExpiryIn).Unix(),
 		},
 	}

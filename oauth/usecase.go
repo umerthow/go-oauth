@@ -2,7 +2,6 @@ package oauth
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -60,25 +59,24 @@ func (u *usecase) RequestToken(ctx context.Context, payload model.TokenRequest) 
 	isPublic := channel.ClientType == "public"
 
 	data := &entity.GenerateBasic{
-		Client: entity.Client{
-			ID:        channel.UserID,
-			Secret:    channel.SecretKey,
-			Public:    isPublic,
-			ClientId:  channel.ClientId,
-			XDeviceId: deviceID,
-		},
-		UserID: channel.UserID,
+		ID:         channel.ID,
+		XDeviceId:  deviceID,
+		ClientId:   channel.ClientId,
+		ClientType: channel.ClientType,
+		IsPublic:   isPublic,
+		IsActive:   channel.IsActive,
+		GrantTypes: channel.GrantTypes,
+		Scopes:     channel.Scopes,
+		CreateAt:   channel.CreatedAt,
+		Domain:     channel.RedirectURI,
 		TokenInfo: entity.TokenInfo{
 			AccessCreateAt: now,
 		},
 	}
 
-	fmt.Println("now.Add(time.Second * tokenExpiryIn)", now)
-
-	access, refresh, err := u.jwt.Token(context.Background(), data, true)
-	token := model.TokenClaim{
-		Token:        access,
-		RefreshToken: refresh,
+	access, _, err := u.jwt.Token(context.Background(), data, false)
+	token := model.TokenClaimResponse{
+		Token: access,
 	}
 
 	return response.NewSuccessResponse(token, response.StatOK, requestTokenSuccessMessage)

@@ -2,12 +2,11 @@ package entity
 
 import (
 	"context"
-	"net/http"
 	"time"
 )
 
 type Channel struct {
-	UserID      string    `json:"id" bson:"id"`
+	ID          string    `json:"id" bson:"id"`
 	Name        string    `json:"name" bson:"name"`
 	ClientId    string    `json:"client_id" bson:"client_id"`
 	ClientType  string    `json:"client_type" bson:"client_type"`
@@ -22,19 +21,8 @@ type Channel struct {
 
 type Client struct {
 	ID        string
-	Secret    string
-	Domain    string
-	Public    bool
 	ClientId  string
 	XDeviceId string
-}
-
-type GenerateBasic struct {
-	Client    Client
-	UserID    string
-	CreateAt  time.Time
-	TokenInfo TokenInfo
-	Request   *http.Request
 }
 
 // GetID client id
