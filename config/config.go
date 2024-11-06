@@ -30,6 +30,9 @@ type Config struct {
 		Username string
 		Password string
 	}
+	JWT struct {
+		PrivateKey string
+	}
 }
 
 func Load() *Config {
@@ -38,6 +41,7 @@ func Load() *Config {
 	cfg.basicAuth()
 	cfg.logFormatter()
 	cfg.mongodb()
+	cfg.privateKey()
 
 	return cfg
 }
@@ -72,6 +76,11 @@ func (cfg *Config) basicAuth() {
 
 	cfg.BasicAuth.Username = username
 	cfg.BasicAuth.Password = password
+}
+
+func (cfg *Config) privateKey() {
+	privateKey := os.Getenv("JWT_KEY")
+	cfg.JWT.PrivateKey = privateKey
 }
 
 func (cfg *Config) logFormatter() {

@@ -8,6 +8,8 @@ import (
 	"syscall"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	_ "github.com/joho/godotenv/autoload" // for development
 	"github.com/rs/cors"
@@ -16,6 +18,7 @@ import (
 	"github.com/umerthow/go-oauth/config"
 	"github.com/umerthow/go-oauth/middleware"
 	"github.com/umerthow/go-oauth/mongodb"
+	"github.com/umerthow/go-oauth/oauth"
 	"github.com/umerthow/go-oauth/response"
 	"github.com/umerthow/go-oauth/server"
 )
@@ -48,6 +51,7 @@ func main() {
 	// Basic Auth Initialze Middleware
 	// set basic auth middleware
 	basicAuthMiddleware := middleware.NewBasicAuth(cfg.BasicAuth.Username, cfg.BasicAuth.Password)
+	headerMiddleware := middleware.NewHeaderMiddleware(logger)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/go-oauth", index)
@@ -69,8 +73,22 @@ func main() {
 		Location:           cfg.Application.Location,
 	})
 
+	// Oauth
+	oauthUsecase := oauth.NewOauthUsecase(oauth.UsecaseOauthProperty{
+		ServiceName:        cfg.Application.Name,
+		Logger:             logger,
+		ChannelsRepository: channelRepository,
+		Location:           cfg.Application.Location,
+		JWT: oauth.JWTAccessGenerate{
+			SignedKeyID:  uuid.NewString(),
+			SignedKey:    []byte(cfg.JWT.PrivateKey),
+			SignedMethod: jwt.SigningMethodHS512,
+		},
+	})
+
 	// Routes Handler
 	channel.NewChannelHTTPHandler(logger, vld, router, basicAuthMiddleware, channelUsecase)
+	oauth.NewOauthHTTPHandler(logger, vld, router, headerMiddleware, oauthUsecase)
 
 	// initiate server
 	srv := server.NewServer(logger, handler, cfg.Application.Port)

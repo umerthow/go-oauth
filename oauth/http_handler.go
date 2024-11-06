@@ -1,4 +1,4 @@
-package channel
+package oauth
 
 import (
 	"encoding/json"
@@ -19,19 +19,19 @@ type HTTPHandler struct {
 	Usecase  Usecase
 }
 
-func NewChannelHTTPHandler(logger *logrus.Logger, validate *validator.Validate, router *mux.Router, basicAuth middleware.RouteMiddleware, usecase Usecase) {
+func NewOauthHTTPHandler(logger *logrus.Logger, validate *validator.Validate, router *mux.Router, middleware middleware.RouteMiddleware, usecase Usecase) {
 	handler := &HTTPHandler{
 		Logger:   logger,
 		Validate: validate,
 		Usecase:  usecase,
 	}
 
-	router.HandleFunc("/go-oauth/v1/channel", basicAuth.Verify(handler.CreateChannel)).Methods(http.MethodPost)
+	router.HandleFunc("/go-oauth/v1/token", middleware.Verify(handler.TokenRequest)).Methods(http.MethodPost)
 }
 
-func (handler *HTTPHandler) CreateChannel(w http.ResponseWriter, r *http.Request) {
+func (handler *HTTPHandler) TokenRequest(w http.ResponseWriter, r *http.Request) {
 	var resp response.Response
-	var payload model.RequestChannel
+	var payload model.TokenRequest
 	ctx := r.Context()
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
@@ -47,7 +47,7 @@ func (handler *HTTPHandler) CreateChannel(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	resp = handler.Usecase.CreateChannel(ctx, payload)
+	resp = handler.Usecase.RequestToken(ctx, payload)
 	response.JSON(w, resp)
 }
 

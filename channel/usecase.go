@@ -22,8 +22,8 @@ const (
 )
 
 type Usecase interface {
-	CreateChannel(ctx context.Context, payload model.Channel) response.Response
-	UpdateChannel(ctx context.Context, payload model.Channel, channelID string) response.Response
+	CreateChannel(ctx context.Context, payload model.RequestChannel) response.Response
+	UpdateChannel(ctx context.Context, payload model.RequestChannel, channelID string) response.Response
 }
 
 type usecase struct {
@@ -42,7 +42,7 @@ func NewChannelUsecase(property UsecaseChannelProperty) *usecase {
 	}
 }
 
-func (u *usecase) CreateChannel(ctx context.Context, payload model.Channel) response.Response {
+func (u *usecase) CreateChannel(ctx context.Context, payload model.RequestChannel) response.Response {
 	now := time.Now().In(u.loc)
 
 	UserID := uuid.NewString()
@@ -75,7 +75,7 @@ func (u *usecase) CreateChannel(ctx context.Context, payload model.Channel) resp
 	return response.NewSuccessResponse("", response.StatOK, createChannelSuccessMessage)
 }
 
-func (u *usecase) UpdateChannel(ctx context.Context, payload model.Channel, channelId string) response.Response {
+func (u *usecase) UpdateChannel(ctx context.Context, payload model.RequestChannel, channelId string) response.Response {
 
 	return response.NewSuccessResponse("", response.StatOK, updateChannelSuccessMessage)
 }

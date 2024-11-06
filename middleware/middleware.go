@@ -6,3 +6,7 @@ import "net/http"
 type RouteMiddleware interface {
 	Verify(next http.HandlerFunc) http.HandlerFunc
 }
+
+type HeaderMiddleware interface {
+	Verify(next http.HandlerFunc) http.HandlerFunc
+}
